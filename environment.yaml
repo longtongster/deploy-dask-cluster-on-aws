@@ -1,0 +1,16 @@
+name: dask-cluster
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - pandas==2.2.3
+    - numpy==2.1.2
+    - dask[complete]==2024.2.1
+    - dask-expr
+    - jupyter
+  
