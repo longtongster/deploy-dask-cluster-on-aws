@@ -12,5 +12,6 @@ dependencies:
     - numpy==2.1.2
     - dask[complete]==2024.2.1
     - dask-expr
+    - s3fs
     - jupyter
   
