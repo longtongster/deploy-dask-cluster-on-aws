@@ -10,8 +10,8 @@ dependencies:
   - pip:
     - pandas==2.2.3
     - numpy==2.1.2
-    - dask[complete]==2024.2.1
-    - dask-expr
+    - dask[complete]==2024.9.1
+    - dask-expr==1.1.15
     - s3fs
     - jupyter
   
