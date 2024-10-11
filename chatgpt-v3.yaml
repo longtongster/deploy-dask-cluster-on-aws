@@ -1,0 +1,168 @@
+#
+# Status
+# 
+# Succesfully created:
+#
+#  - dask scheduler - works and local machine can connect to cluster scheduler
+#  - dask worker - works is visible in notebook client
+#  - security groups
+#  
+# next create EC2 role access to S3 
+#
+# Not part of the cluster but usefull
+# next -> create a bucket called - dask-input-data
+#
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Dask Cluster with 1 Scheduler and 1 Worker and Security Group
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to SSH into the instances
+    Type: AWS::EC2::KeyPair::KeyName
+  # lookup your ip at https://www.whatismyip.com/  
+  MyIPAddress:
+    Description: Your IP address to allow SSH and Dask access
+    Type: String
+    Default: YOUR_IP/32  # Replace with your actual IP in CIDR notation
+
+Resources:
+  DaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Security group with custom rules
+  InboundRuleForDaskScheduler:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt DaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 8786
+      ToPort: 8787
+      SourceSecurityGroupId: !GetAtt DaskSecurityGroup.GroupId 
+  InboundRuleDaskWorkers:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt DaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 30000
+      ToPort: 65535
+      SourceSecurityGroupId: !GetAtt DaskSecurityGroup.GroupId
+  InboundRuleForSSH:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt DaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref MyIPAddress
+  InboundRuleForDaskMyIP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt DaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 8786
+      ToPort: 8787
+      CidrIp: !Ref MyIPAddress 
+
+  DaskSecurityGroupS1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH and Dask communication
+      SecurityGroupIngress:
+        # Allow SSH access from your IP address
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIPAddress
+        # Allow Dask scheduler port (8786) and dashboard (8787) from your IP
+        - IpProtocol: tcp
+          FromPort: 8786
+          ToPort: 8787
+          CidrIp: !Ref MyIPAddress
+        - IpProtocol: tcp
+          FromPort: 30000
+          ToPort: 65535
+          CidrIp: !Ref MyIPAddress
+      Tags:
+        - Key: Name
+          Value: cf-dask-cluster-sg
+          
+  DaskInputDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: dask-input-data
+
+  DaskSchedulerInstance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref DaskSecurityGroup
+      ImageId: ami-0866a3c8686eaeeba  # Replace with a valid AMI ID for your region
+      Tags:
+        - Key: Name
+          Value: dask-scheduler
+      UserData: 
+        Fn::Base64: |
+            #!/bin/bash
+            sudo apt update
+            sudo apt upgrade -y
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt update
+            sudo apt install python3.10 python3.10-venv python3.10-dev python3-pip -y
+            sudo apt install unzip -y
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            python3.10 -m venv .venv
+            source .venv/bin/activate
+            python3 -m pip install --upgrade pip setuptools wheel
+            python3 -m pip install "dask[complete]==2024.9.1" "distributed==2024.9.1"
+            python3 -m pip install "bokeh!=3.0.*,>=2.4.2"
+            python3 -m pip install "dask-expr" "s3fs"
+            dask scheduler
+  DaskWorkerInstance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref DaskSecurityGroup
+      ImageId: ami-0866a3c8686eaeeba  # Replace with a valid AMI ID for your region
+      Tags:
+        - Key: Name
+          Value: dask-worker
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update
+          sudo apt upgrade -y
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo apt update
+          sudo apt install python3.10 python3.10-venv python3.10-dev python3-pip -y
+          sudo apt install unzip -y
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          python3.10 -m venv .venv
+          source .venv/bin/activate
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install "dask[complete]==2024.9.1" "distributed==2024.9.1"
+          python3 -m pip install "bokeh!=3.0.*,>=2.4.2"
+          python3 -m pip install "dask-expr" "s3fs"
+          SCHEDULER_IP=${DaskSchedulerInstance.PrivateIp}
+          echo $SCHEDULER_IP
+          echo tcp://$SCHEDULER_IP:8786
+          dask worker tcp://$SCHEDULER_IP:8786
+
+Outputs:
+  SchedulerPublicIP:
+    Description: Public IP of the Dask Scheduler
+    Value: !GetAtt DaskSchedulerInstance.PublicIp
+  WorkerPublicIP:
+    Description: Public IP of the Dask Worker
+    Value: !GetAtt DaskWorkerInstance.PublicIp
+  SchedulerPrivateIP:
+    Description: Private IP of the Dask Scheduler
+    Value: !GetAtt DaskSchedulerInstance.PrivateIp
