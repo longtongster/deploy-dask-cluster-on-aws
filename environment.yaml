@@ -3,12 +3,13 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.10.12
+  - python=3.10.15
   - pip
   - pip:
     - pandas==2.2.3
-    - numpy==2.1
+    - numpy==2.1.2
     - dask[complete]==2024.9.1
+    - dask-cloudprovider==2024.9.1
     - s3fs==2024.9.0
     - dask-expr==1.1.15
     - awscli
