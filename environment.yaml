@@ -2,18 +2,15 @@ name: dask-cluster
 channels:
   - defaults
   - conda-forge
-  - pytorch
-  - nvidia
 dependencies:
-  - python=3.10
+  - python=3.10.12
   - pip
   - pip:
     - pandas==2.2.3
-    - numpy==2.1.2
+    - numpy==2.1
     - dask[complete]==2024.9.1
     - s3fs==2024.9.0
     - dask-expr==1.1.15
     - awscli
-    - boto3
     - jupyter
-  
+    - boto3  
