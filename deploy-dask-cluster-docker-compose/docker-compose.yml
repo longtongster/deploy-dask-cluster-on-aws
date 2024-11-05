@@ -1,0 +1,14 @@
+services:
+  dask-scheduler:
+    restart: always
+    #context: ./
+    build: ./docker/
+    container_name: dask-scheduler-container
+    ports:
+      - 8786-8787:8786-8787
+  dask-worker-1:
+    restart: always
+    #context: ./
+    build: ./docker
+    container_name: dask-worker-1
+    command: "dask worker tcp://dask-scheduler:8786"

@@ -1,0 +1,8 @@
+pandas==2.2.3
+numpy==2.1.0
+dask[complete]==2024.9.1
+dask-cloudprovider==2024.9.0
+s3fs==2024.9.0
+dask-expr==1.1.15
+awscli
+jupyter
