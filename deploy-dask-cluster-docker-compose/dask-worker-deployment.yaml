@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dask-worker
+spec:
+  replicas: 3  # Number of workers
+  selector:
+    matchLabels:
+      app: dask-worker
+  template:
+    metadata:
+      labels:
+        app: dask-worker
+    spec:
+      containers:
+      - name: dask-worker
+        image: longtong/dask-cluster-image #daskdev/dask:latest
+        args: ["dask-worker", "dask-scheduler.default.svc.cluster.local:8786"]
+        #env:
+        #- name: DASK_DISTRIBUTED__COMM__DEFAULT_PORT
+        #  value: "30000"  # Set the minimum port range for worker communications
+        #- name: DASK_DISTRIBUTED__COMM__RETRY_PORTS
+        #  value: "30000:65535"  # Set the range for communication retries

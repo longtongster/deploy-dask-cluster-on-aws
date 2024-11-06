@@ -68,7 +68,7 @@ Resources:
   DaskInputDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: dask-input-data
+      BucketName: dask-input-data-123
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile

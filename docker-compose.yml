@@ -1,0 +1,8 @@
+services:
+  dask-scheduler:
+    restart: always
+    container_name: dask-scheduler-container
+    # directory of Dockerfile
+    build: ./docker/
+    ports:
+      - 8786-8787:8786-8787

@@ -32,3 +32,4 @@ The blog was not fully working but with a few adjustments I was able to get it r
 
 ## ToDo
 - as an extra exercise we could try to create a dask cluster using docker.
+- `https://medium.com/@vladkens/aws-ecs-cluster-on-ec2-with-terraform-2023-fdb9f6b7db07`
